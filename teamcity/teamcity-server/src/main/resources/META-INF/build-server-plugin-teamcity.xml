@@ -4,7 +4,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"
        default-autowire="constructor">
 
-       <bean id="conjurParametersProvider" class="com.cyberark.ConjurParametersProvider"/>
-       <bean id="conjurProjectConnection" class="com.cyberark.ConjurProjectConnectionProvider"/>
-       <bean id="conjurBuildStartContextProcessor" class="com.cyberark.ConjurBuildStartContextProcessor"/>
+       <bean id="conjurParametersProvider" class="com.cyberark.server.ConjurParametersProvider"/>
+       <bean id="conjurProjectConnection" class="com.cyberark.server.ConjurProjectConnectionProvider"/>
+       <bean id="conjurBuildStartContextProcessor" class="com.cyberark.server.ConjurBuildStartContextProcessor"/>
 </beans>
