@@ -1,5 +1,6 @@
-package com.cyberark;
+package com.cyberark.server;
 
+import com.cyberark.common.ConjurJspKey;
 import jetbrains.buildServer.serverSide.oauth.OAuthProvider;
 import jetbrains.buildServer.serverSide.oauth.OAuthConnectionDescriptor;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package com.cyberark.utilities.exceptions;
+package com.cyberark.common.exceptions;
 
 public class InvalidHttpStatusCodeException extends Exception {
     public InvalidHttpStatusCodeException(String errorMessage) {

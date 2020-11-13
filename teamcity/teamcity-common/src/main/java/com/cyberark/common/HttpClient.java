@@ -1,4 +1,4 @@
-package com.cyberark.utilities;
+package com.cyberark.common;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -11,7 +11,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import com.cyberark.utilities.exceptions.*;
+import com.cyberark.common.exceptions.*;
 
 import java.security.cert.X509Certificate;
 import java.security.NoSuchAlgorithmException;

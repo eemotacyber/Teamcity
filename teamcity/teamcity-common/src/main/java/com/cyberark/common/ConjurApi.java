@@ -1,6 +1,6 @@
-package com.cyberark.utilities;
+package com.cyberark.common;
 
-import com.cyberark.utilities.exceptions.*;
+import com.cyberark.common.exceptions.*;
 
 public class ConjurApi {
     public ConjurConfig config;

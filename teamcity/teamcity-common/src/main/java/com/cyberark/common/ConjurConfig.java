@@ -1,4 +1,4 @@
-package com.cyberark.utilities;
+package com.cyberark.common;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;

@@ -1,6 +1,5 @@
-package com.cyberark;
+package com.cyberark.server;
 
-import com.cyberark.conjur.api.Conjur;
 import jetbrains.buildServer.serverSide.BuildStartContext;
 import jetbrains.buildServer.serverSide.BuildStartContextProcessor;
 import jetbrains.buildServer.serverSide.SProjectFeatureDescriptor;
@@ -18,11 +17,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
-import com.cyberark.utilities.*;
+import com.cyberark.common.*;
 
 public class ConjurBuildStartContextProcessor implements BuildStartContextProcessor {
 
@@ -56,7 +54,7 @@ public class ConjurBuildStartContextProcessor implements BuildStartContextProces
     //
     // All non-conjur variables should not be returned
     // Also the %conjur: and % should be removed from the value
-    // The key should remain the exact same
+    // The key should remain the same
     // output == {
     //   "env.SECRET": "super/secret",
     //   "env.DB_PASS": "db/mysql/username"
@@ -111,33 +109,21 @@ public class ConjurBuildStartContextProcessor implements BuildStartContextProces
         }
 
         // TODO: This should be done through a class (This logic will have to be included on the agent at some point)
-        ConjurJspKey conjurKeys = new ConjurJspKey();
-        String applianceUrl = connectionFeatures.getParameters().get(conjurKeys.getApplianceUrl());
-        String account = connectionFeatures.getParameters().get(conjurKeys.getAccount());
-        String authnLogin = connectionFeatures.getParameters().get(conjurKeys.getAuthnLogin());
-        String apiKey = connectionFeatures.getParameters().get(conjurKeys.getApiKey());
-        String certFile = connectionFeatures.getParameters().get(conjurKeys.getCertFile());
-        String failOnError = connectionFeatures.getParameters().get(conjurKeys.getFailOnError());
 
-//        System.setProperty("CONJUR_ACCOUNT", account);
-//        System.setProperty("CONJUR_APPLIANCE_URL", applianceUrl);
 
-        ConjurConfig config = new ConjurConfig(applianceUrl, account, authnLogin, apiKey);
+        ConjurConnectionParameters conjurConfig = new ConjurConnectionParameters(connectionFeatures);
+        ConjurConfig config = new ConjurConfig(
+                conjurConfig.getApplianceUrl(),
+                conjurConfig.getAccount(),
+                conjurConfig.getAuthnLogin(),
+                conjurConfig.getApiKey());
+
+        // TODO: Add ability to add the certificate to the client so
+        //  I do not have to hard code in to ignore SSL Cert verification
         config.ignoreSsl = true;
         ConjurApi client = new ConjurApi(config);
 
-
-//        Map<String, String> params = context.getSharedParameters();
-//        System.out.println("Starting to List parameters");
-//        for (Map.Entry<String, String> kv : params.entrySet()) {
-//            System.out.printf("Context Parameter: %s = %s \n", kv.getKey(), kv.getValue());
-//        }
-
         Map<String, String> buildParams = context.getBuild().getBuildOwnParameters();
-//        for(Map.Entry<String, String> kv : buildParams.entrySet()) {
-//            System.out.printf("Build Parameter: %s = %s \n", kv.getKey(), kv.getValue());
-//        }
-
         Map<String, String> conjurVariables = getVariableIdsFromBuildParameters(buildParams);
 
         try {

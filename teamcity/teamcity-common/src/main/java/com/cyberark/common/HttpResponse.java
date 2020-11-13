@@ -1,4 +1,4 @@
-package com.cyberark.utilities;
+package com.cyberark.common;
 
 public class HttpResponse {
     public String body;
