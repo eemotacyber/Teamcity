@@ -1,4 +1,4 @@
-package com.cyberark;
+package com.cyberark.server;
 
 public class ConjurJspKey {
     public ConjurJspKey() { }
