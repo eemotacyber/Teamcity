@@ -111,7 +111,7 @@ public class ConjurBuildStartContextProcessor implements BuildStartContextProces
         // TODO: This should be done through a class (This logic will have to be included on the agent at some point)
 
 
-        ConjurConnectionParameters conjurConfig = new ConjurConnectionParameters(connectionFeatures);
+        ConjurConnectionParameters conjurConfig = new ConjurConnectionParameters(connectionFeatures.getParameters());
         ConjurConfig config = new ConjurConfig(
                 conjurConfig.getApplianceUrl(),
                 conjurConfig.getAccount(),

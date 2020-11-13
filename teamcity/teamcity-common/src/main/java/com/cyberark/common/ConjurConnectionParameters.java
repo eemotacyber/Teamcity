@@ -1,9 +1,6 @@
 package com.cyberark.common;
 
-import jetbrains.buildServer.serverSide.SProjectFeatureDescriptor;
-
 import java.util.Map;
-
 
 public class ConjurConnectionParameters {
     private String apiKey;
@@ -13,10 +10,8 @@ public class ConjurConnectionParameters {
     private String certFile;
     private String failOnError;
 
-    public ConjurConnectionParameters(SProjectFeatureDescriptor connectionFeatures) {
+    public ConjurConnectionParameters(Map<String, String> parameters) {
         ConjurJspKey conjurKeys = new ConjurJspKey();
-        Map<String, String> parameters = connectionFeatures.getParameters();
-
         this.apiKey = parameters.get(conjurKeys.getApiKey());
         this.applianceUrl = parameters.get(conjurKeys.getApplianceUrl());
         this.authnLogin = parameters.get(conjurKeys.getAuthnLogin());
