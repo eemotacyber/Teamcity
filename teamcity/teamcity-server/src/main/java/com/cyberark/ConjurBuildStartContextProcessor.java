@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+import com.cyberark.utilities.*;
 
 public class ConjurBuildStartContextProcessor implements BuildStartContextProcessor {
 
@@ -61,7 +62,7 @@ public class ConjurBuildStartContextProcessor implements BuildStartContextProces
     //   "env.DB_PASS": "db/mysql/username"
     // }
     private Map<String, String> getVariableIdsFromBuildParameters(Map<String, String> parameters) {
-        Map<String, String> variableIds = Collections.<String, String>emptyMap();
+        Map<String, String> variableIds = new java.util.HashMap<>(Collections.emptyMap());
 
         for (Map.Entry<String, String> kv : parameters.entrySet() ) {
             String variableIdPrefix = "%conjur:";
@@ -111,15 +112,19 @@ public class ConjurBuildStartContextProcessor implements BuildStartContextProces
 
         // TODO: This should be done through a class (This logic will have to be included on the agent at some point)
         ConjurJspKey conjurKeys = new ConjurJspKey();
-        String account = connectionFeatures.getParameters().get(conjurKeys.getAccount());
-        String apiKey = connectionFeatures.getParameters().get(conjurKeys.getApiKey());
-        String authnLogin = connectionFeatures.getParameters().get(conjurKeys.getAuthnLogin());
         String applianceUrl = connectionFeatures.getParameters().get(conjurKeys.getApplianceUrl());
+        String account = connectionFeatures.getParameters().get(conjurKeys.getAccount());
+        String authnLogin = connectionFeatures.getParameters().get(conjurKeys.getAuthnLogin());
+        String apiKey = connectionFeatures.getParameters().get(conjurKeys.getApiKey());
         String certFile = connectionFeatures.getParameters().get(conjurKeys.getCertFile());
         String failOnError = connectionFeatures.getParameters().get(conjurKeys.getFailOnError());
 
-        System.setProperty("CONJUR_ACCOUNT", account);
-        System.setProperty("CONJUR_APPLIANCE_URL", applianceUrl);
+//        System.setProperty("CONJUR_ACCOUNT", account);
+//        System.setProperty("CONJUR_APPLIANCE_URL", applianceUrl);
+
+        ConjurConfig config = new ConjurConfig(applianceUrl, account, authnLogin, apiKey);
+        config.ignoreSsl = true;
+        ConjurApi client = new ConjurApi(config);
 
 
 //        Map<String, String> params = context.getSharedParameters();
@@ -136,15 +141,22 @@ public class ConjurBuildStartContextProcessor implements BuildStartContextProces
         Map<String, String> conjurVariables = getVariableIdsFromBuildParameters(buildParams);
 
         try {
-            Conjur conjur = new Conjur(authnLogin, apiKey, getSSLContext(certFile));
+            // Conjur conjur = new Conjur(authnLogin, apiKey, getSSLContext(certFile));
+            client.authenticate();
+
 
             for(Map.Entry<String, String> kv : conjurVariables.entrySet()) {
-                String value = conjur.variables().retrieveSecret(kv.getValue());
+                HttpResponse response = client.getSecret(kv.getValue());
+                if (response.statusCode != 200) {
+                    System.out.printf("ERROR: Received status code '%d'. %s", response.statusCode, response.body);
+                    return;
+                }
+
                 // TODO: I think this will work? I do not know if I need to create another map or do a different way of replacing the value
-                kv.setValue(value);
+                kv.setValue(response.body);
+                System.out.println("THIS IS THE VALUE: " + response.body);
             }
 
-            System.out.println("THIS IS THE VALUE: " + value);
         } catch (Exception e) {
             // TODO: Gotta figure out how to make this look prettier
             // I think it is okay to catch all exceptions here, as long as we can forward the exception
