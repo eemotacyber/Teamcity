@@ -111,12 +111,14 @@ public class ConjurBuildStartContextProcessor implements BuildStartContextProces
         // TODO: This should be done through a class (This logic will have to be included on the agent at some point)
 
 
-        ConjurConnectionParameters conjurConfig = new ConjurConnectionParameters(connectionFeatures.getParameters());
+        ConjurConnectionParameters conjurConnectionParam= new ConjurConnectionParameters(connectionFeatures.getParameters());
+        LogUtil log = new LogUtil(conjurConnectionParam.getVerbose());
+
         ConjurConfig config = new ConjurConfig(
-                conjurConfig.getApplianceUrl(),
-                conjurConfig.getAccount(),
-                conjurConfig.getAuthnLogin(),
-                conjurConfig.getApiKey());
+            conjurConnectionParam.getApplianceUrl(),
+            conjurConnectionParam.getAccount(),
+            conjurConnectionParam.getAuthnLogin(),
+            conjurConnectionParam.getApiKey());
 
         // TODO: Add ability to add the certificate to the client so
         //  I do not have to hard code in to ignore SSL Cert verification
@@ -134,6 +136,7 @@ public class ConjurBuildStartContextProcessor implements BuildStartContextProces
             for(Map.Entry<String, String> kv : conjurVariables.entrySet()) {
                 HttpResponse response = client.getSecret(kv.getValue());
                 if (response.statusCode != 200) {
+                    log.writeError(this.getClass().getName(),String.format("ERROR: Received status code %d. %s",response.statusCode, response.body));
                     System.out.printf("ERROR: Received status code '%d'. %s", response.statusCode, response.body);
                     return;
                 }
@@ -151,6 +154,7 @@ public class ConjurBuildStartContextProcessor implements BuildStartContextProces
             // Map create an exception that wraps all of these exceptions called something like
             // ConjurBuildStartUpdateParametersException, just make sure we can include an inner exception
             e.printStackTrace();
+            log.writeError(this.getClass().getName(),String.format("ERROR: ",e.toString()));
             System.out.println("AN ERROR HAS OCCURED: " + e.toString());
             return;
         }

@@ -9,6 +9,7 @@ public class ConjurConnectionParameters {
     private String account;
     private String certFile;
     private String failOnError;
+    private boolean verboseLog;
 
     public ConjurConnectionParameters(Map<String, String> parameters) {
         ConjurJspKey conjurKeys = new ConjurJspKey();
@@ -18,6 +19,7 @@ public class ConjurConnectionParameters {
         this.account = parameters.get(conjurKeys.getAccount());
         this.certFile = parameters.get(conjurKeys.getCertFile());
         this.failOnError = parameters.get(conjurKeys.getFailOnError());
+        this.verboseLog = parameters.get(conjurKeys.getVerboseLog());
     }
 
     private boolean validateUrl(String url) {
@@ -37,5 +39,6 @@ public class ConjurConnectionParameters {
     public String getApiKey(){ return this.apiKey.trim();}
     public String getCertFile(){ return this.certFile.trim(); }
     public boolean getFailOnError(){ return this.failOnError.equals("true"); }
+    public boolean getVerboseLog(){ return this.verboseLog; }
 
 }
