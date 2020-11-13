@@ -95,7 +95,7 @@ public class ConjurBuildStartContextProcessor implements BuildStartContextProces
         Iterator<SProjectFeatureDescriptor> it = build.getBuildType().getProject().getAvailableFeaturesOfType(OAuthConstants.FEATURE_TYPE).iterator();
         SProjectFeatureDescriptor connectionFeatures = null;
 
-        System.out.println("Starting to look at Feature descriptions for connection");
+        // System.out.println("Starting to look at Feature descriptions for connection");
         while(it.hasNext()) {
             SProjectFeatureDescriptor desc = it.next();
             String providerType = desc.getParameters().get(OAuthConstants.OAUTH_TYPE_PARAM);
@@ -104,7 +104,7 @@ public class ConjurBuildStartContextProcessor implements BuildStartContextProces
             // is different in the hashi implemention. Seems like it should be like `conjur-connection` or something
             if (providerType.equals("Connection")) {
                 // TODO: Some of these print statements should be logged via the Teamcity logger (If its possible)
-                System.out.printf("Found connection feature for TYPE '%s'\n", providerType);
+                // System.out.printf("Found connection feature for TYPE '%s'\n", providerType);
                 connectionFeatures = desc;
                 break;
             }
@@ -154,7 +154,7 @@ public class ConjurBuildStartContextProcessor implements BuildStartContextProces
 
                 // TODO: I think this will work? I do not know if I need to create another map or do a different way of replacing the value
                 kv.setValue(response.body);
-                System.out.println("THIS IS THE VALUE: " + response.body);
+                // System.out.println("THIS IS THE VALUE: " + response.body);
             }
 
         } catch (Exception e) {
