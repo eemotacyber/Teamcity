@@ -1,9 +1,6 @@
 package com.cyberark.server;
 
-import jetbrains.buildServer.serverSide.BuildStartContext;
-import jetbrains.buildServer.serverSide.BuildStartContextProcessor;
-import jetbrains.buildServer.serverSide.SProjectFeatureDescriptor;
-import jetbrains.buildServer.serverSide.SRunningBuild;
+import jetbrains.buildServer.serverSide.*;
 import jetbrains.buildServer.serverSide.oauth.OAuthConstants;
 
 import javax.net.ssl.SSLContext;
@@ -24,25 +21,6 @@ import com.cyberark.common.*;
 
 public class ConjurBuildStartContextProcessor implements BuildStartContextProcessor {
 
-    public ByteArrayInputStream getInputStreamFromString(String input) throws IOException {
-        return new ByteArrayInputStream(input.getBytes());
-    }
-
-    // TODO: I think this method works.
-    private SSLContext getSSLContext(String certContents) throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException, KeyManagementException {
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        Certificate cert = cf.generateCertificate(getInputStreamFromString(certContents));
-
-        final KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(null);
-        ks.setCertificateEntry("conjurTlsCaPath", cert);
-        final TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        tmf.init(ks);
-
-        SSLContext conjurSSLContext = SSLContext.getInstance("TLS");
-        conjurSSLContext.init(null, tmf.getTrustManagers(), null);
-        return conjurSSLContext;
-    }
 
     // This method will turn a map of SOMETHING = %conjur:some/secret% into
     // SOMETHING = some/secret
@@ -79,77 +57,92 @@ public class ConjurBuildStartContextProcessor implements BuildStartContextProces
         return variableIds;
     }
 
+    // TODO: Currently when retrieving the connection type, we find the first connection that meets the `providerType`
+    //   and then return that object. It is possible to define multiple connections. I think if multiples are defined
+    //   an error should be returned. And only accept 1 connection per project for the time being.
+    private SProjectFeatureDescriptor getConnectionType(SProject project, String providerType) {
+        Iterator<SProjectFeatureDescriptor> it = project.getAvailableFeaturesOfType(OAuthConstants.FEATURE_TYPE).iterator();
+        while(it.hasNext()) {
+            SProjectFeatureDescriptor desc = it.next();
+            String connectionType = desc.getParameters().get(OAuthConstants.OAUTH_TYPE_PARAM);
+
+            if (connectionType.equals(providerType)) {
+                // TODO: Some of these print statements should be logged via the Teamcity logger (If its possible)
+                // System.out.printf("Found connection feature for TYPE '%s'\n", providerType);
+                return desc;
+            }
+        }
+        return null;
+    }
+
     @Override
     public void updateParameters(BuildStartContext context) {
         // TODO: For now we are going to implement all the logic on the Teamcity server rather than the agent
-        // This means that this method will retrieve the secrets and then set them for the actual agent
-        // However when we implement secret retrieval on the agent we will need to get the `Connection` info
-        // And pass that to the agent
-        // the agent will then use that `Connection` info to establish a connection to the Conjur REST API and
-        // retrieve the secrets on the agent
-        // This will allow the ability to put CIDR restrictions on an API key so it can only run on specific
-        // Teamcity agents.
+        //   This means that this method will retrieve the secrets and then set them for the actual agent
+        //   However when we implement secret retrieval on the agent we will need to get the `Connection` info
+        //   And pass that to the agent
+        //   the agent will then use that `Connection` info to establish a connection to the Conjur REST API and
+        //   retrieve the secrets on the agent
+        //   This will allow the ability to put CIDR restrictions on an API key so it can only run on specific
+        //   Teamcity agents.
+
         SRunningBuild build = context.getBuild();
-        Iterator<SProjectFeatureDescriptor> it = build.getBuildType().getProject().getAvailableFeaturesOfType(OAuthConstants.FEATURE_TYPE).iterator();
-        SProjectFeatureDescriptor connectionFeatures = null;
 
-        // System.out.println("Starting to look at Feature descriptions for connection");
-        while(it.hasNext()) {
-            SProjectFeatureDescriptor desc = it.next();
-            String providerType = desc.getParameters().get(OAuthConstants.OAUTH_TYPE_PARAM);
+        SBuildType buildType = build.getBuildType();
+        if (buildType == null) {
+            // It is possible of build type to be null, if this is the case lets return and not retrieve conjur secrets
+            return;
+        }
+        SProject project = buildType.getProject();
 
-            // TODO: "Connection" should probably not be hardedcoded. Also this connection
-            // is different in the hashi implemention. Seems like it should be like `conjur-connection` or something
-            if (providerType.equals("Connection")) {
-                // TODO: Some of these print statements should be logged via the Teamcity logger (If its possible)
-                // System.out.printf("Found connection feature for TYPE '%s'\n", providerType);
-                connectionFeatures = desc;
-                break;
-            }
+        SProjectFeatureDescriptor connectionFeatures = getConnectionType(project, ConjurSettings.getFeatureType());
+        if (connectionFeatures == null) {
+            // If connection feature cannot be found (no connection has been configured on this project)
+            // then return and do not perform conjur secret retrieval actions
+            return;
         }
 
-        // TODO: This should be done through a class (This logic will have to be included on the agent at some point)
-
-
         ConjurConnectionParameters conjurConfig = new ConjurConnectionParameters(connectionFeatures.getParameters());
+
         ConjurConfig config = new ConjurConfig(
                 conjurConfig.getApplianceUrl(),
                 conjurConfig.getAccount(),
                 conjurConfig.getAuthnLogin(),
-                conjurConfig.getApiKey());
+                conjurConfig.getApiKey(),
+                null,
+                conjurConfig.getCertFile());
 
-        // TODO: Add ability to add the certificate to the client so
-        //  I do not have to hard code in to ignore SSL Cert verification
-        config.ignoreSsl = true;
-        ConjurApi client = new ConjurApi(config);
-
-        Map<String, String> buildParams = context.getBuild().getBuildOwnParameters();
+        Map<String, String> buildParams = build.getBuildOwnParameters();
         Map<String, String> conjurVariables = getVariableIdsFromBuildParameters(buildParams);
 
+        if (conjurVariables.size() == 0) {
+            // No conjur variables are present in the build parameters, if this is the case lets not attempt to
+            // authenticate and just return
+            return;
+        }
+
+        ConjurApi client = new ConjurApi(config);
         try {
-            // Conjur conjur = new Conjur(authnLogin, apiKey, getSSLContext(certFile));
             client.authenticate();
 
-
+            // TODO: Implement failOnError around here
             for(Map.Entry<String, String> kv : conjurVariables.entrySet()) {
                 HttpResponse response = client.getSecret(kv.getValue());
                 if (response.statusCode != 200) {
                     System.out.printf("ERROR: Received status code '%d'. %s", response.statusCode, response.body);
-                    return;
                 }
 
-                // TODO: I think this will work? I do not know if I need to create another map or do a different way of replacing the value
                 kv.setValue(response.body);
-                // System.out.println("THIS IS THE VALUE: " + response.body);
             }
 
         } catch (Exception e) {
-            // TODO: Gotta figure out how to make this look prettier
-            // I think it is okay to catch all exceptions here, as long as we can forward the exception
-            // To some type of log messages and to the build.
 
-            // Map create an exception that wraps all of these exceptions called something like
-            // ConjurBuildStartUpdateParametersException, just make sure we can include an inner exception
+            // TODO: Gotta figure out how to make this look prettier
+            //  I think it is okay to catch all exceptions here, as long as we can forward the exception
+            //  To some type of log messages and to the build.
+            //  Maybe create an exception that wraps all of these exceptions called
+            //  ConjurBuildStartUpdateParametersException, just make sure we can include an inner exception
+            //  Also if a exception is thrown should we fail or only fails if `failOnError` is enabled?
             e.printStackTrace();
             System.out.println("AN ERROR HAS OCCURED: " + e.toString());
             return;
