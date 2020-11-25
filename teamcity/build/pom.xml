@@ -11,8 +11,8 @@
   <properties>
       <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
       <teamcity.teamcity.plugin.version>snapshot-${maven.build.timestamp}</teamcity.teamcity.plugin.version>
-      <teamcity.teamcity.plugin.vendorName>Plugin vendor name</teamcity.teamcity.plugin.vendorName>
-      <teamcity.teamcity.plugin.vendorUrl>Plugin vendor URL</teamcity.teamcity.plugin.vendorUrl>
+      <teamcity.teamcity.plugin.vendorName>Cyberark</teamcity.teamcity.plugin.vendorName>
+      <teamcity.teamcity.plugin.vendorUrl>https://cyberark.com</teamcity.teamcity.plugin.vendorUrl>
   </properties>
   <dependencies>
       <dependency>

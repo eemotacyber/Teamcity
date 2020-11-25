@@ -3,6 +3,7 @@ package com.cyberark.server;
 import com.cyberark.common.ConjurConnectionParameters;
 import com.cyberark.common.ConjurJspKey;
 import com.cyberark.common.ConjurSettings;
+import com.cyberark.common.exceptions.MissingMandatoryParameterException;
 import jetbrains.buildServer.serverSide.oauth.OAuthProvider;
 import jetbrains.buildServer.serverSide.oauth.OAuthConnectionDescriptor;
 import java.util.Map;
@@ -38,7 +39,14 @@ public class ConjurProjectConnectionProvider extends OAuthProvider {
 	public String describeConnection(OAuthConnectionDescriptor connection) {
 		ConjurConnectionParameters parameters = new ConjurConnectionParameters(connection.getParameters());
 
-		return String.format("Connection to Cyberark Conjur server at '%s' with login '%s'",
-				parameters.getApplianceUrl(), parameters.getAuthnLogin());
+		String message = "NA";
+		try {
+			message = String.format("Connection to Cyberark Conjur server at '%s' with login '%s'",
+					parameters.getApplianceUrl(), parameters.getAuthnLogin());
+		} catch (MissingMandatoryParameterException e) {
+			message = "Invalid Conjur Connection Configuration";
+		}
+
+		return message;
 	}
 }

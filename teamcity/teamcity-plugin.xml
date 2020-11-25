@@ -3,13 +3,13 @@
   <info>
     <name>teamcity-conjur-support</name>
     <display-name>Cyberark Conjur Support</display-name>
-    <version>0.0.1</version>
+    <version>@Version@</version>
     <description>Provides support for Cyberark Conjur Secrets Manager</description>
     <download-url>tbd</download-url>
     <email>tbd</email>
     <vendor>
-      <name>Cyberark</name>
-      <url>https://cyberark.com</url>
+      <name>@VendorName@</name>
+      <url>@VendorURL@</url>
       <logo>tbd</logo>
     </vendor>
   </info>
