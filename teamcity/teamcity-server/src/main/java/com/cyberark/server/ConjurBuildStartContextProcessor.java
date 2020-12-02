@@ -2,6 +2,7 @@ package com.cyberark.server;
 
 import com.cyberark.common.exceptions.ConjurApiAuthenticateException;
 import com.cyberark.common.exceptions.MissingMandatoryParameterException;
+import com.cyberark.common.exceptions.MultipleConnectionsReturnedException;
 import jetbrains.buildServer.BuildProblemData;
 import jetbrains.buildServer.serverSide.*;
 import jetbrains.buildServer.serverSide.oauth.OAuthConstants;
@@ -17,29 +18,35 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
+
 import com.cyberark.common.*;
 
 public class ConjurBuildStartContextProcessor implements BuildStartContextProcessor {
 
-    // TODO: Currently when retrieving the connection type, we find the first connection that meets the `providerType`
-    //   and then return that object. It is possible to define multiple connections. I think if multiples are defined
-    //   an error should be returned. And only accept 1 connection per project for the time being.
-    private SProjectFeatureDescriptor getConnectionType(SProject project, String providerType) {
-        Iterator<SProjectFeatureDescriptor> it = project.getAvailableFeaturesOfType(OAuthConstants.FEATURE_TYPE).iterator();
-        while(it.hasNext()) {
-            SProjectFeatureDescriptor desc = it.next();
+    // This method will return one SProjectFeatureDescriptior that represents the Cyberark Conjur Connection
+    //   provided in the project Connections. This method will return null if no Connection can be found and will throw
+    //   a MultipleConnectionsReturnedException if more than one connection was found.
+    private SProjectFeatureDescriptor getConnectionType(SProject project, String providerType) throws MultipleConnectionsReturnedException {
+        List<SProjectFeatureDescriptor> connections = new ArrayList<SProjectFeatureDescriptor>();
+        for (SProjectFeatureDescriptor desc : project.getAvailableFeaturesOfType(OAuthConstants.FEATURE_TYPE)) {
             String connectionType = desc.getParameters().get(OAuthConstants.OAUTH_TYPE_PARAM);
-
             if (connectionType.equals(providerType)) {
-                // TODO: Some of these print statements should be logged via the Teamcity logger (If its possible)
-                // System.out.printf("Found connection feature for TYPE '%s'\n", providerType);
-                return desc;
+                connections.add(desc);
             }
         }
-        return null;
+
+        // If no connections were found return null
+        if (connections.size() == 0) {
+            return null;
+        }
+
+        // If more than on connection was found return error
+        if (connections.size() > 1 ) {
+            throw new MultipleConnectionsReturnedException("Only one Cyberark Conjur Connection should be configurd for this project.");
+        }
+
+        return connections.get(0);
     }
 
     private BuildProblemData createBuildProblem(SBuild build, String message) {
@@ -57,7 +64,15 @@ public class ConjurBuildStartContextProcessor implements BuildStartContextProces
         }
 
         SProject project = buildType.getProject();
-        SProjectFeatureDescriptor connectionFeatures = getConnectionType(project, ConjurSettings.getFeatureType());
+        SProjectFeatureDescriptor connectionFeatures = null;
+
+        try {
+            connectionFeatures = getConnectionType(project, ConjurSettings.getFeatureType());
+        } catch (MultipleConnectionsReturnedException e) {
+            BuildProblemData buildProblem = createBuildProblem(build, String.format("ERROR: %s", e.getMessage()));
+            build.addBuildProblem(buildProblem);
+        }
+        
         if (connectionFeatures == null) {
             // If connection feature cannot be found (no connection has been configured on this project)
             // then return and do not perform conjur secret retrieval actions
