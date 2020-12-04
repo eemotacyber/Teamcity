@@ -60,14 +60,6 @@ public class ConjurParametersProvider extends AbstractBuildParametersProvider {
         Map<String, String> conjurFeatures = connectionFeatures.getParameters();
         Map<String, String> parameters = build.getBuildOwnParameters();
 
-        for(Map.Entry<String, String> kv : conjurFeatures.entrySet()) {
-            System.out.printf("Connection Parameters Config: %s = %s \n", kv.getKey(), kv.getValue());
-        }
-
-        for(Map.Entry<String, String> kv : parameters.entrySet()) {
-            System.out.printf("Build Params in Parameters Provider: %s = %s \n", kv.getKey(), kv.getValue());
-        }
-
         // exposed.add("SUPER_SECRET");
 
         return exposed;
