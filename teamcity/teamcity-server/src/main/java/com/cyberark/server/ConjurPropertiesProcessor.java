@@ -25,7 +25,11 @@ public class ConjurPropertiesProcessor implements PropertiesProcessor {
         String url = properties.get(conjurKeys.getApplianceUrl());
         if (isEmptyOrNull(url)) {
             errors.add(new InvalidProperty(conjurKeys.getApplianceUrl(), shouldNotBeEmpty));
+        } else if (!url.startsWith("https://") && !url.startsWith("http://")) {
+            errors.add(new InvalidProperty(conjurKeys.getApplianceUrl(),
+                    "URL should start with 'https://' or 'http://'"));
         }
+
 
         // Validate Account
         String account = properties.get(conjurKeys.getAccount());
