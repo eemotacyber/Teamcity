@@ -116,7 +116,7 @@ public class ConjurBuildFeature extends AgentLifeCycleAdapter {
                                     "ConjurConnection", "ConjurConnection", message));
                     runningBuild.stopBuild(message);
                 }
-                logger.Verbose(String.format("Successfully retrieve secret '%s' with id '%s'", kv.getKey(), kv.getValue()));
+                logger.Verbose(String.format("Successfully retrieved secret '%s' with id '%s'", kv.getKey(), kv.getValue()));
                 kv.setValue(response.body);
             }
 
