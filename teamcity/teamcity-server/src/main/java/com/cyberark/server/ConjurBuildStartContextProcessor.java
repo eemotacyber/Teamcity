@@ -81,11 +81,8 @@ public class ConjurBuildStartContextProcessor implements BuildStartContextProces
 
         ConjurConnectionParameters conjurConfig = new ConjurConnectionParameters(connectionFeatures.getParameters());
 
-        System.out.println(conjurConfig.toString());
-
         try {
             for(Map.Entry<String, String> kv : conjurConfig.getAgentSharedParameters().entrySet()) {
-                System.out.println(String.format("%s: %s", kv.getKey(), kv.getValue()));
                 context.addSharedParameter(kv.getKey(), kv.getValue());
             }
         } catch (MissingMandatoryParameterException e) {
