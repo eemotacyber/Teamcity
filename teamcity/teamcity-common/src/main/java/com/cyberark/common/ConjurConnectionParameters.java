@@ -99,7 +99,12 @@ public class ConjurConnectionParameters {
     }
 
     public String getApplianceUrl() throws MissingMandatoryParameterException {
-        return trimMandatoryParameter(this.applianceUrl, conjurKeys.getApplianceUrl());
+        String url = trimMandatoryParameter(this.applianceUrl, conjurKeys.getApplianceUrl());
+        // trim any trailing '/'
+        if (url.endsWith("/")) {
+            url = url.substring(0, url.length()-1);
+        }
+        return url;
     }
 
     public String getAccount() throws MissingMandatoryParameterException {
