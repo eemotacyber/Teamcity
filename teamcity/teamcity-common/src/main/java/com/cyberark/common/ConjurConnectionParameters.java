@@ -94,6 +94,13 @@ public class ConjurConnectionParameters {
         return trim(input);
     }
 
+    private boolean isTrue(String str) {
+        if (str == null) {
+            return false;
+        }
+        return str.trim().toLowerCase().equals("true");
+    }
+
     public boolean isValidUrl() throws MissingMandatoryParameterException {
         return this.validateUrl(this.getApplianceUrl());
     }
@@ -120,14 +127,18 @@ public class ConjurConnectionParameters {
     }
 
     public String getCertFile(){
-        return trimOptionalParameter(this.certFile);
+        String certContent = trimOptionalParameter(this.certFile);
+        if (certContent == null) {
+            certContent = "";
+        }
+        return certContent;
     }
 
     public boolean getFailOnError(){
-        return this.failOnError.equals("true");
+        return isTrue(this.failOnError);
     }
 
     public boolean getVerboseLogging() {
-        return this.verboseLogging.equals("true");
+        return isTrue(this.verboseLogging);
     }
 }
