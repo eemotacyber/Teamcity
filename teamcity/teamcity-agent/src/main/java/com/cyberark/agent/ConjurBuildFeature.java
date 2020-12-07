@@ -69,11 +69,6 @@ public class ConjurBuildFeature extends AgentLifeCycleAdapter {
         ConjurConnectionParameters conjurConfig = new ConjurConnectionParameters(runningBuild.getSharedConfigParameters(), true);
         LogUtil logger = new LogUtil(buildLogger, conjurConfig.getVerboseLogging());
 
-        logger.Verbose("Listing shared configuration parameters");
-        for(Map.Entry<String, String> kv : runningBuild.getSharedConfigParameters().entrySet()) {
-            logger.Verbose(String.format("%s: %s", kv.getKey(), kv.getValue()));
-        }
-
         ConjurConfig config = null;
         try {
 
@@ -121,7 +116,7 @@ public class ConjurBuildFeature extends AgentLifeCycleAdapter {
                                     "ConjurConnection", "ConjurConnection", message));
                     runningBuild.stopBuild(message);
                 }
-                logger.Verbose(String.format("Successfully retrieve secret '%s' with id '%s'", kv.getKey(), kv.getValue()));
+                logger.Verbose(String.format("Successfully retrieved secret '%s' with id '%s'", kv.getKey(), kv.getValue()));
                 kv.setValue(response.body);
             }
 
